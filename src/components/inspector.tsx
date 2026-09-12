@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Sheet, SheetContent } from '@/components/ui/dialog'
+import { DialogTitle, Sheet, SheetContent } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/overlays'
 import { Input, Label, Textarea } from '@/components/ui/primitives'
 import { api, queryKeys } from '@/api/client'
@@ -40,7 +40,7 @@ export function EntityDetailSheet() {
     <Sheet open={Boolean(inspect)} onOpenChange={(next) => !next && close()}>
       <SheetContent aria-describedby="entity-detail">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="text-sm font-semibold">Record detail</h2>
+          <DialogTitle className="text-sm font-semibold">Record detail</DialogTitle>
           <Button variant="outline" size="sm" onClick={close}>
             Close
           </Button>

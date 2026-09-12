@@ -30,6 +30,21 @@ VITE_API_BASE_URL=/api/v1
 
 Vite proxies `/api` to `http://localhost:8000` (override with `VITE_API_PROXY`).
 
+## Mock API (for testing)
+
+The dashboard contract is also served as a labelled HTTP mock:
+
+```bash
+npm run mock-api
+```
+
+- Docs: http://localhost:8000/docs
+- Fixture IDs: http://localhost:8000/api/v1/admin/fixtures
+- Smoke test: `npm run test:api`
+- UI against the mock: set `VITE_DATA_MODE=api` and run `npm run dev:api`
+
+Reset the in-memory workspace with `POST /api/v1/admin/reset`.
+
 ## Product rules preserved in the UI
 
 - A generated reply is not a sent reply.

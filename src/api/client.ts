@@ -75,10 +75,12 @@ function routeDemo(method: Method, path: string, body: unknown): unknown {
 
   if (cleanResource === 'todos') {
     if (method === 'GET' && !id) return { data: demoStore.todos, meta: { next_cursor: null, has_more: false } }
+    if (method === 'POST' && !id) return demoStore.createTodo(body as { title: string })
     if (method === 'PATCH' && id) return demoStore.patchTodo(id, body as Partial<Todo>)
   }
   if (cleanResource === 'tasks') {
     if (method === 'GET' && !id) return { data: demoStore.tasks, meta: { next_cursor: null, has_more: false } }
+    if (method === 'POST' && !id) return demoStore.createTask(body as { title: string })
     if (method === 'GET' && id) return demoStore.tasks.find((t) => t.id === id)
     if (method === 'PATCH' && extra === 'delegate') return demoStore.delegateTask(id, body as never)
     if (method === 'PATCH' && id) return demoStore.patchTask(id, body as Partial<Task>)
@@ -89,6 +91,7 @@ function routeDemo(method: Method, path: string, body: unknown): unknown {
   }
   if (cleanResource === 'leads') {
     if (method === 'GET' && !id) return { data: demoStore.leads, meta: { next_cursor: null, has_more: false } }
+    if (method === 'POST' && !id) return demoStore.createLead(body as { organization: string; contact_name: string })
     if (method === 'GET' && id) return demoStore.leads.find((l) => l.id === id)
     if (method === 'PATCH' && id) return demoStore.patchLead(id, body as Partial<Lead>)
   }
@@ -115,8 +118,9 @@ function routeDemo(method: Method, path: string, body: unknown): unknown {
   }
   if (cleanResource === 'reports') {
     if (method === 'GET' && !id) return { data: demoStore.reports, meta: { next_cursor: null, has_more: false } }
-    if (method === 'GET' && id) return demoStore.reports.find((r) => r.id === id)
     if (method === 'POST' && extra === 'regenerate') return demoStore.regenerateReport(id)
+    if (method === 'POST' && !id) return demoStore.createReport(body as { title?: string })
+    if (method === 'GET' && id) return demoStore.reports.find((r) => r.id === id)
   }
   if (cleanResource === 'approvals') {
     if (method === 'GET' && !id) return { data: demoStore.approvals, meta: { next_cursor: null, has_more: false } }

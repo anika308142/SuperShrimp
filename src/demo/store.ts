@@ -667,6 +667,163 @@ class DemoStore {
     }
   }
 
+  createTodo(input: { title: string; priority?: Todo['priority']; due_at?: string | null }) {
+    const todo: Todo = {
+      id: nextId('tdo'),
+      title: input.title,
+      group: 'today',
+      completed: false,
+      priority: input.priority ?? 'medium',
+      owner: MAYA,
+      assignee: MAYA,
+      assignee_kind: 'human',
+      client: null,
+      project: null,
+      due_at: input.due_at ?? nowOffset(8 * 60),
+      rationale: 'Created by operator via API.',
+      blocker_reason: null,
+      agent_owned: false,
+      completable: true,
+      task_id: null,
+      version: 1,
+    }
+    this.todos.unshift(todo)
+    return this.mutated(todo, `Todo created: ${todo.title}`)
+  }
+
+  createTask(input: { title: string; project_id?: string; priority?: Task['priority'] }) {
+    const project = this.projects.find((p) => p.id === input.project_id) ?? this.projects[0]
+    if (!project) throw this.err(422, 'VALIDATION_ERROR', 'A project is required to create a task.')
+    const task: Task = {
+      id: nextId('tsk'),
+      title: input.title,
+      description: input.title,
+      acceptance_criteria: ['Operator-defined acceptance is recorded'],
+      project: { type: 'project', id: project.id, label: project.name },
+      client: project.client,
+      owner: MAYA,
+      assignee: MAYA,
+      assignee_kind: 'human',
+      status: 'ready',
+      priority: input.priority ?? 'medium',
+      due_at: nowOffset(24 * 60),
+      latest_activity_at: nowOffset(0),
+      latest_activity: 'Created via API.',
+      blocker_reason: null,
+      waiting_on: null,
+      linked_ticket_id: null,
+      linked_lead_id: null,
+      linked_run_ids: [],
+      created_by_agent: false,
+      version: 1,
+    }
+    this.tasks.unshift(task)
+    return this.mutated(task, `Task created: ${task.title}`)
+  }
+
+  createLead(input: { organization: string; contact_name: string; service_fit?: string }) {
+    const lead: Lead = {
+      id: nextId('led'),
+      organization: input.organization,
+      contact_name: input.contact_name,
+      contact_role: 'Unknown',
+      service_fit: input.service_fit ?? 'Unspecified',
+      stage: 'new',
+      owner: MAYA,
+      source: 'API',
+      next_step: null,
+      next_step_at: null,
+      last_activity_at: nowOffset(0),
+      health_reasons: ['Missing qualification data', 'No next step'],
+      deal_value: null,
+      qualification: { budget: null, timeline: null, decision_maker: input.contact_name, next_step: null },
+      notes: 'Created via mock API for testing.',
+      linked_client_id: null,
+      linked_project_id: null,
+      version: 1,
+    }
+    this.leads.unshift(lead)
+    return this.mutated(lead, `Lead created: ${lead.organization}`)
+  }
+
+  createReport(input: { title?: string; type?: Report['type'] }) {
+    const report: Report = {
+      id: nextId('rpt'),
+      title: input.title ?? 'Ad-hoc operations brief',
+      type: input.type ?? 'daily_operations',
+      status: 'queued',
+      period_label: 'On demand',
+      generated_at: null,
+      author: { type: 'agent', id: 'agt_001', label: 'CEO Agent' },
+      scope: 'Northline Studio workspace',
+      freshness: 'Queued. New revision, nothing overwritten.',
+      revision: 1,
+      superseded_by: null,
+      body: 'Queued. The mock API will not invent a finished report until regenerate or a later job completes.',
+      linked_records: [],
+      version: 1,
+    }
+    this.reports.unshift(report)
+    return this.mutated(report, `Report queued: ${report.title}`)
+  }
+
+  activityPage() {
+    const rows = this.events.map((event) => ({
+      id: event.id,
+      at: event.occurred_at,
+      actor: { type: event.entity.type, id: event.entity.id, label: event.summary },
+      summary: event.summary,
+      related: { type: event.entity.type, id: event.entity.id, label: event.summary },
+    }))
+    return page(rows)
+  }
+
+  fixtureCatalog() {
+    return {
+      workspace: 'Northline Studio (labelled mock)',
+      operator: USER,
+      ids: {
+        employees: this.employees.map((e) => ({ id: e.id, name: e.name })),
+        agents: this.agents.map((a) => ({ id: a.id, name: a.name, status: a.status })),
+        projects: this.projects.map((p) => ({ id: p.id, name: p.name, health: p.health })),
+        tasks: this.tasks.map((t) => ({ id: t.id, title: t.title, status: t.status, version: t.version })),
+        todos: this.todos.map((t) => ({ id: t.id, title: t.title, completable: t.completable, version: t.version })),
+        leads: this.leads.map((l) => ({ id: l.id, organization: l.organization, stage: l.stage, version: l.version })),
+        tickets: this.tickets.map((t) => ({ id: t.id, number: t.number, subject: t.subject, version: t.version })),
+        approvals: this.approvals.map((a) => ({ id: a.id, action: a.action_label, status: a.status, version: a.version })),
+        runs: this.runs.map((r) => ({ id: r.id, action: r.action_label, status: r.status })),
+        reports: this.reports.map((r) => ({ id: r.id, title: r.title, status: r.status, revision: r.revision })),
+      },
+      suggested_tests: [
+        { name: 'Approve then send NS-184 draft', ticket: 'tkt_001', approval: 'apr_001' },
+        { name: 'Reject send without approval', ticket: 'tkt_001', expect: '422 if draft is not approved' },
+        { name: 'Qualify Lumen Pay without budget', lead: 'led_004', expect: '422 missing budget' },
+        { name: 'Advance Brightline without owner', lead: 'led_002', expect: '422 owner required' },
+        { name: 'Retry failed Meridian CRM run', run: 'run_003' },
+        { name: 'Conflict on stale version', todo: 'tdo_003', expect: '409 if version is wrong' },
+        { name: 'Regenerate daily brief as new revision', report: 'rpt_001' },
+      ],
+    }
+  }
+
+  reset() {
+    this.employees = createEmployees()
+    this.agents = createAgents()
+    this.projects = createProjects()
+    this.tasks = createTasks()
+    this.todos = createTodos()
+    this.leads = createLeads()
+    this.tickets = createTickets()
+    this.approvals = createApprovals()
+    this.runs = createRuns()
+    this.reports = createReports()
+    this.notifications = createNotifications()
+    this.activity = []
+    this.events = []
+    this.eventTick = 0
+    this.demoLoaded = true
+  }
+
   private err(status: number, code: string, message: string, fields?: Record<string, string>) {
     return new ApiError(status, { code, message, fields, request_id: reqId() })
   }
